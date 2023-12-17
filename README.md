@@ -16,8 +16,11 @@ to server. Extensive studies of four datasets prove that HyperFed is effective i
 
 ## Implementation 
 This implementation is basically derived from [PFLib](https://github.com/TsingZ0/PFLlib).
-###Step 1: generate hyperbolic prototype
 
+###Step 1: generate hyperbolic prototype
+```
+python system/utils/prototypes.py
+```
 ###Step 2: train model 
 HyperFed is hyperbolic prototype based federated learning method.\
 MGDA is the consistent updating enhanced hyperbolic prototype based federated learning method.
