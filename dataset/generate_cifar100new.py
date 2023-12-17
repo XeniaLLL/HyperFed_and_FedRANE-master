@@ -1,0 +1,78 @@
+import numpy as np
+import os
+import sys
+import random
+import torch
+import torch.utils.data
+import torchvision
+
+import torchvision.transforms as transforms
+from utils.dataset_utils import check, separate_data, split_data, save_file
+from sklearn.model_selection import train_test_split
+
+random.seed(1)
+np.random.seed(1)
+num_clients = 20
+num_classes = 100
+dir_path = "Cifar100_new_alpha05/"
+
+
+# Allocate data to users
+def generate_cifar100(dir_path, num_clients, num_classes, niid, balance, partition):
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    # Setup directory for train/test data
+    config_path = dir_path + "config.json"
+    train_path = dir_path + "train/"
+    test_path = dir_path + "test/"
+
+    # if check(config_path, train_path, test_path, num_clients, num_classes, niid, balance, partition):
+    #     return
+
+    # Get Cifar100 data
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    trainset = torchvision.datasets.CIFAR100(
+        root=dir_path + "rawdata", train=True, download=True, transform=transform)
+    trainloader = torch.utils.data.DataLoader(
+        trainset, batch_size=len(trainset.data), shuffle=False)
+    for _, train_data in enumerate(trainloader, 0):
+        trainset.data, trainset.targets = train_data
+
+    dataset_image = []
+    dataset_label = []
+    dataset_image.extend(trainset.data.cpu().detach().numpy())
+    dataset_label.extend(trainset.targets.cpu().detach().numpy())
+    dataset_image = np.array(dataset_image)
+    dataset_label = np.array(dataset_label)
+    X, y, statistic = separate_data((dataset_image, dataset_label), num_clients, num_classes,
+                                    niid, balance, partition, class_per_client=20)
+    train_data, test_data = split_data(X, y)
+    save_file(config_path, train_path, test_path, train_data, test_data, num_clients, num_classes,
+              statistic, niid, balance, partition)
+
+    testset = torchvision.datasets.CIFAR100(root=dir_path + "rawdata", train=False, download=True, transform=transform)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=len(testset.data), shuffle=False)
+    for _, test_data in enumerate(testloader, 0):
+        testset.data, testset.targets = test_data
+
+    global_test2_path = dir_path + "global_test"  # all the test data
+    test_dict = {'x': testset.data, 'y': np.array(testset.targets)}
+    with open(global_test2_path, 'wb') as f:
+        np.savez_compressed(f, data=test_dict)
+
+    # global_test1_path = dir_path + "global_test1"  # 30% test data
+    # _, test_x, _, test_y = train_test_split(testset.data, np.array(testset.targets), test_size=0.3, shuffle=True)
+    # test_dict = {'x': test_x, 'y': test_y}
+    # with open(global_test1_path, 'wb') as f:
+    #     np.savez_compressed(f, data=test_dict)
+
+
+if __name__ == "__main__":
+    niid = True if sys.argv[1] == "noniid" else False
+    balance = True if sys.argv[2] == "balance" else False
+    partition = sys.argv[3] if sys.argv[3] != "-" else None
+
+    generate_cifar100(dir_path, num_clients, num_classes, niid, balance, partition)
