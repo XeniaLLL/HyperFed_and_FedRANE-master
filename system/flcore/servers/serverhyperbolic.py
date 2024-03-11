@@ -5,8 +5,6 @@ import sys
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from flcore.clients.clienthyperbolic import clientHyperbolic
-from flcore.clients.clienthyperbolic_cl import clientHyperbolicCL
 from flcore.clients.clienthyperbolic_cl_y import clientHyperbolicCLY
 from flcore.servers.serverbase import Server
 from utils.data_utils import read_client_data
@@ -18,7 +16,7 @@ import torch
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
-from flcore.losses.MMA import get_mma_loss
+
 from geoopt import PoincareBall
 import wandb
 from utils.data_utils import read_global_test_data

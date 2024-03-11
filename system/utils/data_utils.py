@@ -76,7 +76,7 @@ def get_batch_sample(data, batch_size):
 
 
 
-data_PATH = 'YOUR DATA PATH'
+data_PATH = '../dataset'
 
 
 def read_data(dataset, idx, is_train=True):

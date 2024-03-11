@@ -102,7 +102,8 @@ def run():
                 args.model = CNNModel(in_features=3, num_classes=args.num_classes, dim=2048).to(args.device)
 
         elif model_str == "resnet":
-            args.model = torchvision.models.resnet18(pretrained=False).to(args.device)
+            from flcore.trainmodel.resnet import resnet18 as resnet
+            args.model = resnet().to(args.device)
             # args.model = torchvision.models.resnet18(pretrained=args.use_pretrain_resnet).to(args.device)
             args.model.fc = torch.nn.Linear(args.model.fc.in_features, args.num_classes).to(args.device)
             if "mnist" in args.dataset.lower():
@@ -151,7 +152,7 @@ def run():
 
             args.predictor.weight.data = torch.from_numpy(
 
-                np.load(args.hyperbolic_proto_dir.format(args.HyperbolicFed_dim))).float().to(
+                np.load(args.hyperbolic_proto_dir.format(args.HyperbolicFed_dim, args.num_classes))).float().to(
 
                 args.device) * args.mult_slope
 
@@ -233,7 +234,7 @@ if __name__ == "__main__":
     parser.add_argument('-spe', "--save_per_epoch", type=int, default=10,
                         help="interval for saving the checkpoint")
     parser.add_argument('-cn', "--checkpoint_name", type=str, default='HyperbolicFed')
-    parser.add_argument('-dbg', "--debug", type=bool, default=False)
+    parser.add_argument('-dbg', "--debug", type=bool, default=True)
     parser.add_argument("-d", "--dimension", type=int, default=1)  # representation dimension
 
     # practical
@@ -264,7 +265,7 @@ if __name__ == "__main__":
     # HyperbolicFed & MGDA
     parser.add_argument('-hb_p_dir', "--hyperbolic_proto_dir", type=str,
                         # default="/home/lxt/code/pfl/prototypes/hyperbolic-prototypes-{}-{}.npy")
-                        default="/home/zpy/code/pfl/prototypes/hyperbolic-prototypes-{}-{}.npy")
+                        default="../prototypes/hyperbolic-prototypes-{}-{}.npy")
     parser.add_argument('-curv', "--curvature", type=float, default=1.)
     parser.add_argument('-hb_dim', "--HyperbolicFed_dim", type=int, default=20)
     parser.add_argument('-mult', "--mult_slope", type=float, default=0.9)
@@ -283,6 +284,7 @@ if __name__ == "__main__":
     parser.add_argument("-query", "--query", type=int, default=1)
 
 
+    parser.add_argument("-fine_tuning_steps", "--fine_tuning_steps", type=int, default=10)
     args = parser.parse_args()
     print(args)
 
