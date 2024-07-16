@@ -13,13 +13,17 @@ from torch.nn.functional import dropout
 import torchvision
 from torchvision import models
 import wandb
-
+from torch import nn
 from flcore.servers.serveravg import FedAvg
 from flcore.servers.serverhyperbolic import HyperbolicFed
 from flcore.servers.servermgda import MGDA
-
+from flcore.servers.serverFedRANE import FedRANE
+from flcore.servers.serverFedRANEAug import FedRANEAug
 from flcore.trainmodel.models import *
 from flcore.trainmodel.resnet import *
+from flcore.trainmodel.graph_models import GNNReID, GCN, GAT,GSAT
+from flcore.trainmodel.graph_generator import GraphGenerator
+
 from utils.mem_utils import MemReporter
 
 # from utils.plot import plot_result
@@ -183,7 +187,61 @@ def run():
             # args.model.fc = nn.Identity()
             args.model = LocalModel(args.model, args.predictor)
             server = HyperbolicFed(args, i)
+        elif args.algorithm == "FedRANE":
+            graph_gen_config = {
+                'sim_type': 'correlation',
+                'thresh': 'no',  # 0
+                'set_negative': 'hard',
+            }
+            graph_generator = GraphGenerator(**graph_gen_config)
 
+            if args.gnn_type == "gcn":
+                gnn = GCN(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                          dropout=0.2, batch_norm=True)
+            elif args.gnn_type == "gat":
+                gnn = GAT(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                          dropout=0.2)
+            elif args.gnn_type == "gsat":
+                gnn = GSAT(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                           dropout=0.2)
+            args.predictor = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            # args.model = LocalGModel(args.model,graph_generator = graph_generator,  gnn=gcn,predictor= args.predictor)
+            # args.model = LocalGModel(args.model,graph_generator = graph_generator,  gnn=gat,predictor= args.predictor)
+            args.model = LocalGModel(args.model, graph_generator=graph_generator, gnn=gnn, predictor=args.predictor)
+            server = FedRANE(args, i)
+            # args.predictor = copy.deepcopy(args.model.fc)
+            # args.model.fc = nn.Identity()
+            # args.model = LocalModel(args.model, args.predictor)
+            # server = SphereFedLowDimension(args, i)
+
+        elif args.algorithm == "FedRANEAug":
+            graph_gen_config = {
+                'sim_type': 'correlation',
+                'thresh': 'no',  # 0
+                'set_negative': 'hard',
+            }
+            graph_generator = GraphGenerator(**graph_gen_config)
+
+            if args.gnn_type == "gcn":
+                gnn = GCN(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                          dropout=0.2, batch_norm=True)
+            elif args.gnn_type == "gat":
+                gnn = GAT(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                          dropout=0.2)
+            elif args.gnn_type == "gsat":
+                gnn = GSAT(args.model.fc.in_features, args.model.fc.in_features, graph_hops=args.graph_n_hops,
+                           dropout=0.2)
+            args.predictor = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            # args.model = LocalGModel(args.model,graph_generator = graph_generator,  gnn=gcn,predictor= args.predictor)
+            # args.model = LocalGModel(args.model,graph_generator = graph_generator,  gnn=gat,predictor= args.predictor)
+            args.model = LocalGModel(args.model, graph_generator=graph_generator, gnn=gnn, predictor=args.predictor)
+            server = FedRANEAug(args, i)
+            # args.predictor = copy.deepcopy(args.model.fc)
+            # args.model.fc = nn.Identity()
+            # args.model = LocalModel(args.model, args.predictor)
+            # server = SphereFedLowDimension(args, i)
         else:
             raise NotImplementedError
 
@@ -276,6 +334,21 @@ if __name__ == "__main__":
 
     parser.add_argument('-testpm', "--test_pm", type=bool, default=False,
                         help="Use the distribution probability to test")
+
+    # FedRANE
+    parser.add_argument("-reg_graph_aug", "--reg_graph_aug", type=float, default=0.,
+                        help="regularization on graph augmentation")
+    parser.add_argument("-graph_n_hops", "--graph_n_hops", type=int, default=1, help="num of the gnn layers")
+    parser.add_argument("-use_sam", "--use_sam", type=bool, default=False, help="control grad sharpness or not")
+    parser.add_argument("-sam_rho", "--sam_rho", type=float, default=0.5, help="hyper-param for sam& asam ")
+    parser.add_argument("-sam_eta", "--sam_eta", type=float, default=0.2, help="hyper-param for asam ")
+    parser.add_argument("-info_nce_temperature", "--info_nce_temperature", type=float, default=0.8,
+                        help="hyper-param for asam ")
+    parser.add_argument('-aggregate_all', "--aggregate_all", type=bool, default=True,
+                        help="False for aggregate only the base")
+    parser.add_argument('-nce_reg', "--nce_reg", type=float, default=0.1)
+    parser.add_argument('-gnn_type', "--gnn_type", type=str, default='gat',
+                        help='gnn agumentation type: gcn, gat, gsat')
 
 
     # few_shot learning
