@@ -3,7 +3,7 @@ This repository is an official PyTorch implementation of papers:
 IJCAI 2023 (Oral).
 2. [FedRANE: Joint Local Relational Augmentation and Global Nash Equilibrium for Federated Learning with Non-IID Data](https://dl.acm.org/doi/abs/10.1145/3581783.3612178)
 ACM MM 2023 (Oral)
-Thanks to [@PFLlib](https://github.com/TsingZ0/PFLlib) for providing a robust and practical implmentation framework.
+Thanks to [@PFLlib](https://github.com/TsingZ0/PFLlib) for providing a robust and practical implementation framework.
 
 # HyperFed: Hyperbolic Prototypes Exploration with Consistent Aggregation for Non-IID Data in Federated Learning
 ## Abstract
